@@ -1,0 +1,100 @@
+"""Generate a GitHub-safe animated SVG. Python standard library only."""
+import argparse
+import datetime as dt
+import html
+import json
+import os
+from pathlib import Path
+import urllib.request
+
+ROOT = Path(__file__).resolve().parents[1]
+QUERY = '''query($login: String!) {
+  user(login: $login) {
+    contributionsCollection {
+      contributionCalendar { totalContributions }
+    }
+  }
+}'''
+
+
+def fetch_total(token, login):
+    request = urllib.request.Request(
+        'https://api.github.com/graphql',
+        data=json.dumps({'query': QUERY, 'variables': {'login': login}}).encode(),
+        headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/json',
+                 'User-Agent': 'dawud-profile'}, method='POST')
+    with urllib.request.urlopen(request, timeout=30) as response:
+        result = json.load(response)
+    if result.get('errors'):
+        raise RuntimeError('GitHub GraphQL query failed; previous artwork is preserved.')
+    total = result['data']['user']['contributionsCollection']['contributionCalendar']['totalContributions']
+    if type(total) is not int or total < 0:
+        raise ValueError('Invalid contribution total; previous artwork is preserved.')
+    return total
+
+
+def render(total=None, date=None):
+    count = f'{total:,}' if total is not None else '—'
+    status = f'UPDATED {date} UTC' if total is not None else 'AWAITING FIRST SYNC'
+    label = f'{count} GitHub contributions in the last year' if total is not None else 'Contribution count awaiting first workflow run'
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="960" height="700" viewBox="0 0 960 700" role="img" aria-labelledby="title desc">
+<title id="title">{html.escape(label)}</title>
+<desc id="desc">A sculpted graphite and electric-blue ring. Think. Build. Refine. Dawud, software developer.</desc>
+<defs>
+  <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#171e2a"/><stop offset=".55" stop-color="#090e17"/><stop offset="1" stop-color="#111d31"/></linearGradient>
+  <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a6b4c9"/><stop offset=".18" stop-color="#354358"/><stop offset=".42" stop-color="#101722"/><stop offset=".64" stop-color="#61738d"/><stop offset=".8" stop-color="#1b2639"/><stop offset="1" stop-color="#080d16"/></linearGradient>
+  <linearGradient id="blue" x2="1" y2="1"><stop stop-color="#9de4ff"/><stop offset=".4" stop-color="#32aaff"/><stop offset="1" stop-color="#1749ee"/></linearGradient>
+  <radialGradient id="core"><stop stop-color="#172e4b"/><stop offset="1" stop-color="#090f1a"/></radialGradient>
+  <radialGradient id="aura"><stop stop-color="#1268f5" stop-opacity=".24"/><stop offset="1" stop-color="#1268f5" stop-opacity="0"/></radialGradient>
+</defs>
+<style>.orbit{{transform-origin:480px 278px;animation:spin 24s linear infinite}}@keyframes spin{{to{{transform:rotate(360deg)}}}}@media(prefers-reduced-motion:reduce){{.orbit{{animation:none}}}}</style>
+<rect width="960" height="700" rx="28" fill="url(#bg)"/>
+<rect x="1" y="1" width="958" height="698" rx="27" fill="none" stroke="#2b3c52"/>
+<path d="M35 90V35H90 M870 35H925V90 M35 610V665H90 M870 665H925V610" fill="none" stroke="#41658e" stroke-width="2"/>
+<g font-family="Arial,Helvetica,sans-serif">
+<text x="54" y="64" fill="#a2b4ca" font-size="12" letter-spacing="3">DAWUD / SOFTWARE DEVELOPER</text>
+<circle cx="860" cy="59" r="4" fill="#4eaeff"/><text x="874" y="64" fill="#93b4d9" font-size="11">01</text>
+<ellipse cx="480" cy="294" rx="300" ry="237" fill="url(#aura)"/>
+<ellipse cx="480" cy="451" rx="159" ry="19" fill="#03070d" opacity=".8"/>
+<circle cx="480" cy="286" r="164" fill="#050a12" stroke="#05080e" stroke-width="22"/>
+<circle cx="480" cy="278" r="164" fill="url(#core)" stroke="url(#metal)" stroke-width="25"/>
+<circle cx="480" cy="278" r="177" fill="none" stroke="#6c87aa" stroke-opacity=".45"/>
+<circle cx="480" cy="278" r="149" fill="none" stroke="#348bff" stroke-opacity=".2" stroke-width="8"/>
+<circle cx="480" cy="278" r="149" fill="none" stroke="url(#blue)" stroke-width="3"/>
+<circle cx="480" cy="278" r="194" fill="none" stroke="#28405c" stroke-dasharray="1 13" stroke-width="3"/>
+<g class="orbit"><circle cx="480" cy="278" r="194" fill="none" stroke="url(#blue)" stroke-width="4" stroke-linecap="round" stroke-dasharray="110 1109" transform="rotate(-70 480 278)"/><circle cx="480" cy="84" r="5" fill="#9adfff"/></g>
+<text x="480" y="226" text-anchor="middle" fill="#92bce9" font-size="12" letter-spacing="4">GITHUB CONTRIBUTIONS</text>
+<text x="480" y="300" text-anchor="middle" fill="#edf6ff" font-size="68" font-weight="700" letter-spacing="-3">{count}</text>
+<text x="480" y="335" text-anchor="middle" fill="#aabbd0" font-size="16">over the last year</text>
+<path d="M452 356H508" stroke="#308fff" stroke-width="3"/>
+<text x="480" y="386" text-anchor="middle" fill="#7c9cbe" font-size="10" letter-spacing="1.5">{status}</text>
+<path d="M90 278H250 M710 278H870" stroke="#29405c"/>
+<path d="M90 278H145 M815 278H870" stroke="#308fff" stroke-width="2"/>
+<path d="M92 265L79 278L92 291 M868 265L881 278L868 291" stroke="#6e9ac8" stroke-width="2" fill="none"/>
+<text x="480" y="538" text-anchor="middle" fill="#edf4fc" font-size="36" font-weight="700" letter-spacing="-1">Think. Build. Refine.</text>
+<text x="480" y="575" text-anchor="middle" fill="#a0b2c8" font-size="17">Turning ideas into software that matters.</text>
+<path d="M330 612H630" stroke="#2a405d"/>
+<text x="480" y="645" text-anchor="middle" fill="#75b7ff" font-size="12" letter-spacing="4">CURIOSITY / CRAFT / CONSISTENCY</text>
+</g></svg>'''
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--placeholder', action='store_true', help='Generate honest initial artwork without API access')
+    args = parser.parse_args()
+    if args.placeholder:
+        artwork = render()
+    else:
+        token = os.environ.get('GH_TOKEN')
+        if not token:
+            raise SystemExit('GH_TOKEN is required. Existing artwork was not changed.')
+        total = fetch_total(token, os.environ.get('PROFILE_USERNAME', 'Dawud-Muhammed'))
+        artwork = render(total, dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%d'))
+    output = ROOT / 'assets' / 'contributions.svg'
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output.with_suffix('.tmp')
+    temporary.write_text(artwork, encoding='utf-8')
+    temporary.replace(output)
+
+if __name__ == '__main__':
+    main()
