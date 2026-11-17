@@ -28,7 +28,7 @@
 <text x="480" y="300" text-anchor="middle" fill="#edf6ff" font-size="68" font-weight="700" letter-spacing="-3">474</text>
 <text x="480" y="335" text-anchor="middle" fill="#aabbd0" font-size="16">over the last year</text>
 <path d="M452 356H508" stroke="#308fff" stroke-width="3"/>
-<text x="480" y="386" text-anchor="middle" fill="#7c9cbe" font-size="10" letter-spacing="1.5">UPDATED 2026-11-16 UTC</text>
+<text x="480" y="386" text-anchor="middle" fill="#7c9cbe" font-size="10" letter-spacing="1.5">UPDATED 2026-11-17 UTC</text>
 <path d="M90 278H250 M710 278H870" stroke="#29405c"/>
 <path d="M90 278H145 M815 278H870" stroke="#308fff" stroke-width="2"/>
 <path d="M92 265L79 278L92 291 M868 265L881 278L868 291" stroke="#6e9ac8" stroke-width="2" fill="none"/>
